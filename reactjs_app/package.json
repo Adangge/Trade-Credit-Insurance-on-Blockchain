@@ -1,0 +1,22 @@
+{
+  "name": "ReactPackages",
+  "version": "1.0.0",
+  "description": "Test",
+  "main": "localhost:8080",
+  "dependencies": {
+    "request": "^2.81.0",
+    "request-promise" : "^4.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "name": "my-super-amazing-app",
+    "version": "1.0.0",
+    "private": true
+  }
+}
