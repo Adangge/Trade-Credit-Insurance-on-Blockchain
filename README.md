@@ -1,6 +1,6 @@
-# Smart TCI
+# Trade Credit Insurance on Blockchain
 
-Smart TCI is the second experimentation on the ethereum blockchain lead by EHDA. This project have a use case that could reinvent trade credit insurance on the blockchain. See more [here]().
+Smart TCI is the second experimentation on the ethereum blockchain lead by Euler Hermes Digital Agency (EHDA). This project have a use case that could reinvent trade credit insurance on the blockchain. See more [here]().
 
 ### Prerequisites
 
