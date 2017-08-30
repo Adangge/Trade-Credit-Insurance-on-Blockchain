@@ -697,12 +697,33 @@ body{
 border-radius: 10px;
 }
 
+.inputAccounts{
+  margin-left: 75%;
+  width: 26%;
+  height: 36;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+}
+
+.IsBuyer{
+  color: rgb(16, 111, 179);
+}
+.IsSeller{
+  color: rgb(255,64,129);
+}
+
+
 .inputForm_currency{
   width: 7%;
   margin-left: 10px;
 -moz-border-radius: 10px;
 -webkit-border-radius: 10px;
 border-radius: 10px;
+}
+
+.disableEur{
+      background-color: #ebebe4;
 }
 
 .buttonForm{
@@ -765,6 +786,11 @@ border-radius: 10px;
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+.buttonBuyer{
+    background: rgb(16, 111, 179);
+    color: rgb(255,255,255);
 }
 
 /*Events*/

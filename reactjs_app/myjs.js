@@ -1,5 +1,5 @@
 // Loading web3
-var Web3 = require('web3');
+/*var Web3 = require('web3');
 metamaskLoaded = 0;
 if (typeof web3 !== 'undefined') {
   // If a web3 is already loaded i.e. metamask
@@ -8,7 +8,7 @@ if (typeof web3 !== 'undefined') {
 } else {
   // Otherwise load the web3 provided in the html file and connect it to a local node
   web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-}
+}*/
 
 var MENUDATA = {
   nameList:['Invoices', 'New invoice']  //Insérer les noms des nouvelles pages ici
@@ -40,6 +40,8 @@ var ACCOUNTSNAME = [
 
 //Store the promise response
 var tmpInvoice;
+var dateDefaultPayement = "Fri Sep 29 2017 00:00:00 GMT+0200 (CEST)";
+var dueAt_Default = "2017-09-29";
 
 // The full page
 class App extends React.Component{
@@ -102,9 +104,13 @@ class App extends React.Component{
 }
 // The menu Bar
 class Menu extends React.Component{
+
+  change(){
+    changeAccount();
+  }
   render(){
-    //console.log(web3.eth.accounts[0])
-    //console.log(web3.eth.getTransactionsByAccount(web3.eth.accounts[0]))
+    //console.log(currentAccount)
+    //console.log(web3.eth.getTransactionsByAccount(currentAccount))
     var menuEntries = this.props.entries.map(function(name,index){
       return (<a href="#" key={index} onClick={()=>this.props.onClick(index)}>
                   <i className="icon-envelope-letter"></i>
@@ -112,7 +118,7 @@ class Menu extends React.Component{
                 </a>);
 
     },this);
-    var nameOfAccount = this.props.accountsName[web3.eth.accounts[0]];
+    var nameOfAccount = this.props.accountsName[currentAccount];
     return (
       <header className="dapp-header">
 
@@ -126,7 +132,12 @@ class Menu extends React.Component{
             </nav>
           </div>
           <div className="menuTwo">
-            Welcome {web3.eth.accounts[0]}!
+            <select className="inputWhite inputAccounts" onChange={()=>this.change()} id="account">
+        			<option  value="0x76d499C529cc06323EA0c5d5edcf9B11c02597cB" >Total</option>
+        			<option value="0xC30F6af2c92eFd81DC27D30ccD573B0dA675D3b1" >Air France</option>
+              <option value="0x8764eAD14051407D2761FeE6fab8597B07FE803c">Darty</option>
+              <option value="0x29d773c667cEE478Fc22Fd756F772Fb5f719a39b">HSBC</option>
+        		</select>
           </div>
 
       </header>
@@ -145,7 +156,7 @@ class Page extends React.Component{
       invoiceSelected: null,
     };
     //  Call all th invoices registered for the current address
-    var currentAccount = web3.eth.accounts[0].toLowerCase();
+    //var currentAccount = currentAccount.toLowerCase();
     getInvoices(currentAccount, this);
     console.log("I passed once in the constructor")
   }
@@ -153,7 +164,7 @@ class Page extends React.Component{
   render(){
     if(!this.state.passed){
       console.log("I passed once in the render")
-      getInvoices(web3.eth.accounts[0].toLowerCase(), this);
+      getInvoices(currentAccount.toLowerCase(), this);
     }
     this.state.passed = false;
     //console.log("events myjs: " + JSON.stringify(this.state.events));
@@ -170,6 +181,13 @@ class Page extends React.Component{
         var parts = this.state.invoices[index].dueAt.split('-');
         var sInvoiceDueDate = new Date(parts[0], parts[1]-1, parts[2]);
 
+        //#Test Default
+        var IsDefaultDate = (sInvoiceDueDate == dateDefaultPayement)? true:false;
+        if(IsDefaultDate){
+          this.state.invoices[index].duAt = "18-08-2017";
+          sInvoiceDueDate = new Date("2017","08","18");
+        }
+
         // Today's date
         var q = new Date();
         var m = q.getMonth();
@@ -183,13 +201,17 @@ class Page extends React.Component{
         }
 
         // Invoice approved but payment late
-        else if ( sInvoiceDueDate < date && (!sSellerGotPaid)){
+        else if ( (sInvoiceDueDate < date && (!sSellerGotPaid))){ //#A ENlever IsDefaultDate
           status = "Late";
         }
 
         else if (sSellerGotPaid){
           //this.state.invoices[index].BuyerPaid = 1;
           status = "Paid";
+        }
+        //#
+        else if(IsDefaultDate){
+          status = "Late";
         }
 
         else{
@@ -238,7 +260,7 @@ class InvoiceCreation extends React.Component{
 
   createInvoice(){
     //The owner is seller or not
-    var indexOwner = searchOwner(web3.eth.accounts[0].toLowerCase());
+    var indexOwner = searchOwner(currentAccount.toLowerCase());
     var buyerAddress = "";
     var sellerAddress = "" ;
     var sellerHasValidate_ = false;
@@ -278,7 +300,7 @@ class InvoiceCreation extends React.Component{
   }
 
   render(){
-    var indexOwner = searchOwner(web3.eth.accounts[0].toLowerCase());
+    var indexOwner = searchOwner(currentAccount.toLowerCase());
     var today = new Date().toISOString().slice(0, 10);
 
     var buyerList = ACCOUNTSNAME.map(function(name,index){
@@ -423,12 +445,16 @@ class InvoicesList extends React.Component{
     var paid = this.props.state.invoices[index].status == 'Paid';
     var awaitingPayment = this.props.state.invoices[index].status == 'Awaiting Payment';
 
-    var iAmBuyer = this.props.state.invoices[index].buyerAddress.toLowerCase() == web3.eth.accounts[0].toLowerCase();
+    var iAmBuyer = this.props.state.invoices[index].buyerAddress.toLowerCase() == currentAccount.toLowerCase();
     var buyerApproved = this.props.state.invoices[index].buyerHasValidate;
-    var iAmSeller = this.props.state.invoices[index].sellerAddress.toLowerCase() == web3.eth.accounts[0].toLowerCase();
+    var iAmSeller = this.props.state.invoices[index].sellerAddress.toLowerCase() == currentAccount.toLowerCase();
     var sellerApproved = this.props.state.invoices[index].sellerHasValidate;
     var sellerGotPaid = this.props.state.invoices[index].sellerGotPaid;
     var InModifcation = this.props.state.invoices[index].InModifcation;
+    var sInvoiceDueDate = this.props.state.invoices[index].dueAt;
+
+    //#A ENlever
+    //var IsDefaultDate = (sInvoiceDueDate == dateDefaultPayement)? true:false;
 
     if (waitingForApproval){
         if ((iAmBuyer && !buyerApproved) ||( iAmSeller && !sellerApproved)){
@@ -486,7 +512,7 @@ class InvoicesList extends React.Component{
     }
 
     if (awaitingPayment){
-      if (iAmSeller && !sellerGotPaid)
+      if (iAmSeller && !sellerGotPaid)  //#&& IsDefaultDate
         return(
           <div className="invoiceAction">
             <button className="invoiceActionInside" onClick={() => this.declarePayment(index)}>Declare Payment</button>
@@ -508,7 +534,7 @@ class InvoicesList extends React.Component{
 
   serviceAction(index){
     var hasTCI = this.props.state.invoices[index].HasTCI;
-    var iAmSeller = this.props.state.invoices[index].sellerAddress.toLowerCase() == web3.eth.accounts[0].toLowerCase();
+    var iAmSeller = this.props.state.invoices[index].sellerAddress.toLowerCase() == currentAccount.toLowerCase();
     var InDefault = this.props.state.invoices[index].ServiceAttached.IsInDefault;
     var late = this.props.state.invoices[index].status == 'Late';
     var paid = this.props.state.invoices[index].status == 'Paid';
@@ -523,8 +549,8 @@ class InvoicesList extends React.Component{
           </div>
         );
       }
-      else if(hasTCI && !InDefault){
-        if (this.props.state.invoices[index].status == "Late" &&  !InDefault){ //this.props.state.invoices[index].status == "Late" &&
+      else if( (hasTCI && !InDefault)){ //#|| ((hasTCI && !InDefault) && IsDefaultDate
+        if (this.props.state.invoices[index].status == "Late" &&  !InDefault){
           return(
             <div  className="serviceAction">
               <button className="serviceActionInside" onClick={() => this.declareClaim(index)}>Declare a claim</button>
@@ -567,9 +593,9 @@ class InvoicesList extends React.Component{
   }
 
   serviceDesaprove(index){
-    var iAmBuyer = this.props.state.invoices[index].buyerAddress.toLowerCase() == web3.eth.accounts[0].toLowerCase();
+    var iAmBuyer = this.props.state.invoices[index].buyerAddress.toLowerCase() == currentAccount.toLowerCase();
     var buyerApproved = this.props.state.invoices[index].buyerHasValidate;
-    var iAmSeller = this.props.state.invoices[index].sellerAddress.toLowerCase() == web3.eth.accounts[0].toLowerCase();
+    var iAmSeller = this.props.state.invoices[index].sellerAddress.toLowerCase() == currentAccount.toLowerCase();
     var sellerApproved = this.props.state.invoices[index].sellerHasValidate;
     var InModifcation = this.props.state.invoices[index].InModifcation;
 
@@ -583,9 +609,9 @@ class InvoicesList extends React.Component{
   }
 
   serviceRestauration(index){
-    var iAmBuyer = this.props.state.invoices[index].buyerAddress.toLowerCase() == web3.eth.accounts[0].toLowerCase();
+    var iAmBuyer = this.props.state.invoices[index].buyerAddress.toLowerCase() == currentAccount.toLowerCase();
     var buyerApproved = this.props.state.invoices[index].buyerHasValidate;
-    var iAmSeller = this.props.state.invoices[index].sellerAddress.toLowerCase() == web3.eth.accounts[0].toLowerCase();
+    var iAmSeller = this.props.state.invoices[index].sellerAddress.toLowerCase() == currentAccount.toLowerCase();
     var sellerApproved = this.props.state.invoices[index].sellerHasValidate;
     var InModifcation = this.props.state.invoices[index].InModifcation;
 
@@ -601,7 +627,7 @@ class InvoicesList extends React.Component{
   tciDetails(index){
     var IsInDefault = this.props.state.invoices[index].ServiceAttached.IsInDefault;
     var HasTCI = this.props.state.invoices[index].HasTCI;
-    var iAmSeller = this.props.state.invoices[index].sellerAddress.toLowerCase() == web3.eth.accounts[0].toLowerCase();
+    var iAmSeller = this.props.state.invoices[index].sellerAddress.toLowerCase() == currentAccount.toLowerCase();
     var paid = this.props.state.invoices[index].status == 'Paid';
     var currency = Currency(this.props.state.invoices[index].ServiceAttached.currency);
 
@@ -637,32 +663,22 @@ class InvoicesList extends React.Component{
 
   }
 
-  events(){
-    console.log("events myjs:" + this.props.state.invoices[0]);
-    /*if(this.props.state.events != null){
-      var events = this.props.state.events.map(function(Id, index){
-        console.log(index);
-        //Default Payment
-        if(this.props.state.events[index].msg == "default"){
-          return(
-            <div className="oaerror danger">
-              <strong>{this.props.state.events[index].invoiceNumber}</strong> - {this.props.state.events[index].msg}
-            </div>
-          )
-        }
-        else if (this.props.state.events[index].msg == "modificationDesapproved"){
-          <div className="oaerror warning">
-            <strong>{this.props.state.events[index].invoiceNumber}</strong> - {this.props.state.events[index].msg}
-          </div>
-        }
-        else{
-          <div className="oaerror info">
-            <strong>{this.props.state.events[index].invoiceNumber}</strong> - {this.props.state.events[index].msg}
-          </div>
-        }
-      });
-      return events;
-    }*/
+  numberInvoice(index){
+    var buyerTmp = this.props.state.invoices[index].buyerAddress;
+
+    if (buyerTmp.toLowerCase() == currentAccount.toLowerCase()){
+      var numberInvoice = parseInt(this.props.state.invoices[index].indexBuyer) + 1;
+      return(
+        <button className="mdl-button mdl-js-button mdl-button--fab invoiceNumber buttonBuyer">{numberInvoice}</button>
+      );
+    }
+
+    else{
+      var numberInvoice = parseInt(this.props.state.invoices[index].indexSeller) + 1;
+      return(
+        <button className="mdl-button mdl-js-button mdl-button--fab mdl-button--colored invoiceNumber">{numberInvoice}</button>
+      );
+    }
   }
 
 
@@ -673,16 +689,14 @@ class InvoicesList extends React.Component{
       var invoiceList = this.props.state.invoices.map(function(Id,index){
         var buyerTmp = this.props.state.invoices[index].buyerAddress;
 
-        if (buyerTmp.toLowerCase() == web3.eth.accounts[0].toLowerCase()){
+        if (buyerTmp.toLowerCase() == currentAccount.toLowerCase()){
           buyerTmp = "You";
-          var numberInvoice = this.props.state.invoices[index].indexBuyer;
         }
 
 
         var sellerTmp = this.props.state.invoices[index].sellerAddress;
-        if (sellerTmp.toLowerCase() == web3.eth.accounts[0].toLowerCase()){
+        if (sellerTmp.toLowerCase() == currentAccount.toLowerCase()){
           sellerTmp = "You";
-          var numberInvoice = this.props.state.invoices[index].indexBuyer;
         }
 
         var invoiceAction = this.statusAction(index);
@@ -691,6 +705,14 @@ class InvoicesList extends React.Component{
         var serviceDesaprove = this.serviceDesaprove(index);
         var serviceRestauration = this.serviceRestauration(index);
         var tciDetails = this.tciDetails(index);
+        var numberInvoice = this.numberInvoice(index);
+
+        if(this.props.state.invoices[index].dueAt == dueAt_Default){
+          var dueAt = "2017-04-20";
+        }
+        else{
+          var dueAt = this.props.state.invoices[index].dueAt;
+        }
 
         var currency = Currency(this.props.state.invoices[index].currency);
 
@@ -703,7 +725,7 @@ class InvoicesList extends React.Component{
         if (this.props.state.invoiceSelected != index){
           return (<div key={index}>
                     <div className="content">
-                      <button className="mdl-button mdl-js-button mdl-button--fab mdl-button--colored invoiceNumber">{numberInvoice}</button>
+                      {numberInvoice}
                     </div>
                      <div className="invoiceSummary" onClick={()=>this.handleClick(index)}>
                         <div className="content">
@@ -723,7 +745,7 @@ class InvoicesList extends React.Component{
         else
           return (<div key={index}>
                     <div className="content">
-                      <button className="mdl-button mdl-js-button mdl-button--fab mdl-button--colored invoiceNumber">{numberInvoice}</button>
+                      {numberInvoice}
                     </div>
                      <div className="invoiceSummary" onClick={()=>this.handleClick(index)}>
                       <div className="content">
@@ -746,7 +768,7 @@ class InvoicesList extends React.Component{
                       </div>
 
                       <div className="content">
-                        <span className="status">Due : {this.props.state.invoices[index].dueAt}</span>
+                        <span className="status">Due : {dueAt}</span>
                       </div>
 
                       <div className="content">
@@ -780,55 +802,66 @@ class InvoicesList extends React.Component{
     }
     //Events
     if(this.props.state.events != null){
-     events = this.props.state.events.map(function(Id, index){
+     var length = this.props.state.events.length;
 
-        //key
-        var key_ = index + 98;
-        //Default Payment
-        if(this.props.state.events[index].msg == "default"){
-          return(
-            <div key={key_}>
-              <div className="oaerror danger">
-                <strong>({this.props.state.events[index].invoiceNumber.toString()})</strong>. Is in default.
-              </div><br/>
-            </div>
-          );
-        }
-        else if (this.props.state.events[index].msg == "modificationDesapproved"){
-          return(
-            <div key={key_}>
-              <div className="oaerror warning">
-                <strong>({this.props.state.events[index].invoiceNumber.toString()})</strong>. Modification has been desaproved.
-              </div> <br/>
-            </div>
-          );
-        }
-        else{
-          //Defintion of the right message
-          var _event = this.props.state.events[index].msg.toString();
-          var message;
-          if(_event == "creation")
-            message = "Has been created.";
-          else if(_event == "payment")
-            message = "Has been paid.";
-          else if(_event == "creationTCI")
-            message = "A TCI has been created.";
-          else if(_event == "validation")
-            message = "Has been approved.";
-          else if(_event == "modification")
-            message = "Has been modified.";
-          else if(_event == "modificationApproved")
-            message = "Modification has been approved.";
-          else if(_event == "removed")
-            message = "An invoice has been removed.";
-          //Return
-          return(
-            <div key={key_}>
-              <div className="oaerror success">
-              <strong>{this.props.state.events[index].invoiceNumber.toString()}</strong>. {message}
-              </div><br/>
-            </div>
-          );
+     events = this.props.state.events.map(function(Id, index){
+       //Display the three recent event only
+        if( length <= 4 || ( (length > 4) && (index > length - 5) ) ){
+          var IsSeller = this.props.state.events[index].IsSeller;
+          var invoiceNumber = parseInt(this.props.state.events[index].invoiceNumber) + 1;
+          if(IsSeller)
+            var Id = <span className="IsSeller">{invoiceNumber}. </span>
+          else
+            var Id = <span className="IsBuyer">{invoiceNumber}. </span>
+
+          //key
+          var key_ = index + 98;
+          //Default Payment
+          if(this.props.state.events[index].msg == "default"){
+            return(
+              <div key={key_}>
+                <div className="oaerror danger">
+                  <strong>{Id}</strong> Is in default.
+                </div><br/>
+              </div>
+            );
+          }
+          else if (this.props.state.events[index].msg == "modificationDesapproved."){
+            return(
+              <div key={key_}>
+                <div className="oaerror warning">
+                  <strong>{Id}</strong> Modification has been desaproved.
+                </div> <br/>
+              </div>
+            );
+          }
+          else{
+            //Defintion of the right message
+            var _event = this.props.state.events[index].msg.toString();
+            var message;
+            if(_event == "creation")
+              message = "Has been created.";
+            else if(_event == "payment")
+              message = "Has been paid.";
+            else if(_event == "creationTCI")
+              message = "A TCI has been created.";
+            else if(_event == "validation")
+              message = "Has been approved.";
+            else if(_event == "modification")
+              message = "Has been modified.";
+            else if(_event == "modificationApproved")
+              message = "Modification has been approved.";
+            else if(_event == "removed")
+              message = "An invoice has been removed.";
+            //Return
+            return(
+              <div key={key_}>
+                <div className="oaerror success">
+                <strong>{Id}</strong>{message}
+                </div><br/>
+              </div>
+            );
+          }
         }
       }, this);
     }
@@ -947,7 +980,12 @@ class TCI extends React.Component{
       indexBuyer: this.props.state.indexBuyer,
       status : this.props.state.status
     };
-
+    console.log("_sellerId: " + _sellerId)
+    console.log("_buyerId: " + _buyerId)
+    console.log("_amount: " + _amount)
+    console.log("_currency: " + _currency)
+    console.log("_dueAt: " + _dueAt)
+    console.log("_issueAt: " + _issueAt)
     //Call the API
     var jqxhr = $.get( "API_request.php", { sellerId: _sellerId, buyerId: _buyerId, invoice_Amount: _amount, invoice_currency: _currency, invoice_dueAt: _dueAt, invoice_issueAt: _issueAt}, function(data) {
       console.log( "success" );
@@ -1010,7 +1048,12 @@ class TCI extends React.Component{
             <div className="menuOne">
             </div>
             <div className="menuTwo">
-              Welcome {web3.eth.accounts[0]}!
+              <select className="inputWhite inputAccounts" id="account" onchange="changeAccount()">
+                <option  value="0x76d499C529cc06323EA0c5d5edcf9B11c02597cB">Total</option>
+                <option value="0xC30F6af2c92eFd81DC27D30ccD573B0dA675D3b1">Air France</option>
+                <option value="0x8764eAD14051407D2761FeE6fab8597B07FE803c">Darty</option>
+                <option value="0x29d773c667cEE478Fc22Fd756F772Fb5f719a39b">HSBC</option>
+              </select>
             </div>
 
         </header>
@@ -1069,7 +1112,7 @@ class API_request extends React.Component{
               <p type='text' className='result' name='status' id='status'>{this.props.tci.status} </p>
             </p>
               <p>
-                <label for='amount' className='label_'>Cover amount: </label><br/>
+                <label for='amount' className='label_'>Cover price: </label><br/>
                 <p type='text' className='result' name='amount' id='amount'> {Math.round(this.props.tci.coverage.coverPrice) + currency} </p>
               </p>
             <button id='false' value ='"+ invoice_form +"' className='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent buttonForm_2' onClick={() => this.reload(2, false)}> Cancel</button>
@@ -1146,7 +1189,12 @@ class API_request extends React.Component{
             <div className="menuOne">
             </div>
             <div className="menuTwo">
-              Welcome {web3.eth.accounts[0]}!
+              <select className="inputWhite inputAccounts" id="account" onchange="changeAccount()">
+                <option  value="0x76d499C529cc06323EA0c5d5edcf9B11c02597cB">Total</option>
+                <option value="0xC30F6af2c92eFd81DC27D30ccD573B0dA675D3b1">Air France</option>
+                <option value="0x8764eAD14051407D2761FeE6fab8597B07FE803c">Darty</option>
+                <option value="0x29d773c667cEE478Fc22Fd756F772Fb5f719a39b">HSBC</option>
+              </select>
             </div>
 
         </header>
@@ -1207,7 +1255,7 @@ class Edit_Invoice extends React.Component{
                  <p>
                  <label for='amount'>Amount</label><br/>
                    <input type="number" name="amount"  className= "amount inputForm" id="amount" placeholder={this.props.state.amount} required/>
-                   <input type="unit" name="currency"  className= "unit inputForm_currency" id="currency" value={currency} disabled/>
+                   <input type="unit" name="currency"  className= "unit inputForm_currency disableEur" id="currency" value={currency} disabled/>
                  </p>
 
                 <p>
@@ -1217,7 +1265,7 @@ class Edit_Invoice extends React.Component{
 
                 <p>
                   <label for='dueDate'>Due date</label><br/>
-                  <input type='text' name='dueDate' id='dueDate' className='inputForm' placeholder={this.props.state.dueAt} required/>
+                  <input type='date' name='dueDate' min={this.props.state.dueAt} id='dueDate' className='inputForm' placeholder={this.props.state.dueAt} required/>
                 </p>
               </div>
 
@@ -1258,7 +1306,12 @@ class Edit_Invoice extends React.Component{
             <div className="menuOne">
             </div>
             <div className="menuTwo">
-              Welcome {web3.eth.accounts[0]}!
+              <select className="inputWhite inputAccounts" id="account" onchange="changeAccount()">
+                <option  value="0x76d499C529cc06323EA0c5d5edcf9B11c02597cB">Total</option>
+                <option value="0xC30F6af2c92eFd81DC27D30ccD573B0dA675D3b1">Air France</option>
+                <option value="0x8764eAD14051407D2761FeE6fab8597B07FE803c">Darty</option>
+                <option value="0x29d773c667cEE478Fc22Fd756F772Fb5f719a39b">HSBC</option>
+              </select>
             </div>
 
         </header>

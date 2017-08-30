@@ -152,7 +152,6 @@ contract Invoice_Contract{
   function displayContract_2() public constant returns (bool, bool){
     return(_invoice.InModifcation, _invoice.HasBackUp);
   }
-
   function displayContractTCI() public constant returns (bool, bytes32, bytes32, bytes32){
     return _tci.displayContractTCI();
   }
@@ -160,13 +159,13 @@ contract Invoice_Contract{
   /**********
   Validation
   **********/
- function Validation(){
-    if(_invoice.sellerHasValidate){
+ function validation(){
+    //if(_invoice.sellerHasValidate){
         _invoice.buyerHasValidate = true;
-    }
-    else{
+    //}
+  //  else{
         _invoice.sellerHasValidate = true;
-    }
+    //}
   }
 
   /**********
@@ -231,3 +230,4 @@ contract Invoice_Contract{
   }*/
 
 }
+

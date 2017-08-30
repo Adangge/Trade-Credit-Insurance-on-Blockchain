@@ -16,12 +16,14 @@ contract Central_Contract {
    struct Event{
      bytes32 msg;
      uint invoiceNumber;
+     bool IsSeller;
    }
    mapping (address => Invoice_Contract[]) public seller;
    mapping (address => Invoice_Contract[]) public buyer;
    mapping (address => awaiting[]) public awaitingInvoice;
    mapping (address => Event[]) public events;
    mapping(address => uint) public limEvents;
+
 
    /**********
     Accesseurs
@@ -53,8 +55,8 @@ contract Central_Contract {
    function getLengthEvents(address adresse) public constant returns (uint){
      return (events[adresse].length);
    }
-   function getEvents(address adresse, uint i) public constant returns (bytes32, uint, uint){
-     return (events[adresse][i].msg, events[adresse][i].invoiceNumber, i);
+   function getEvents(address adresse, uint i) public constant returns (bytes32, uint, bool, uint){
+     return (events[adresse][i].msg, events[adresse][i].invoiceNumber, events[adresse][i].IsSeller,  i);
    }
 
    function getLength_Seller(address adresse) public constant returns (uint){
@@ -63,6 +65,7 @@ contract Central_Contract {
    function getLength_Buyer(address adresse) public constant returns (uint){
      return buyer[adresse].length;
    }
+
 
    /**********
    Create Invoice
@@ -104,6 +107,7 @@ contract Central_Contract {
    Events
    **********/
    function storeEvents (address sellerAddress, address buyerAddress, bytes32 msg, uint invoiceNumber_s, uint invoiceNumber_b , bool sellerOnly){
+
      //Insert the event in the both sides
      Event memory tmp_s;
      tmp_s.msg = msg;
@@ -111,6 +115,10 @@ contract Central_Contract {
      Event memory tmp_b;
      tmp_b.msg = msg;
      tmp_b.invoiceNumber = invoiceNumber_b;
+     //Get varaiable
+     tmp_s.IsSeller = true;
+     tmp_b.IsSeller = false;
+
      //Pushes
      if(sellerOnly){
        events[sellerAddress].push(tmp_s);
@@ -125,32 +133,19 @@ contract Central_Contract {
        limEvents[buyerAddress]++;
      }
      //Check seller to remove
-     if(limEvents[sellerAddress] == 4){
-       //reset limEvents
-       limEvents[sellerAddress] = 0;
+     /*if(limEvents[sellerAddress] == 4){
        //remove events
        removeEvents(sellerAddress);
      }
      //Check buyer to remove
      if(limEvents[buyerAddress] == 4){
-       //reset limEvents
-       limEvents[buyerAddress] = 0;
        //remove events
        removeEvents(buyerAddress);
-     }
-
+     }*/
    }
-   function removeEvents (address adresse){
-     //Erase all the events stored once viwed
-     uint length = events[adresse].length;
-     //Replace the last events at the first place
-     events[adresse][0] = events[adresse][length - 1];
-     //Erase the 3 others
-     for(uint i = 1; i <= length - 1; i++){
-       delete events[adresse][i];
-       events[adresse].length--;
-     }
-   }
+   /*function removeEvents (address adresse){
+     limEvents[adresse] = 0;
+   }*/
 
    /**********
    Function bridge
@@ -172,17 +167,21 @@ contract Central_Contract {
     storeEvents(adresse, buyerAddress, "creationTCI", index, indexBuyer, true);
   }
 
-  function Validation(address adresse, uint index, bytes1 side){
-    if(side == "b"){
-      buyer[adresse][index].Validation();
+  function validation(address adresse, uint index, bool IsSeller){
+    if(IsSeller){
+      seller[adresse][index].validation();
     }
     else{
-      seller[adresse][index].Validation();
+      buyer[adresse][index].validation();
     }
+
     //Register event
-    uint indexBuyer = seller[adresse][index].getIndexBuyer();
+    /*uint indexBuyer = seller[adresse][index].getIndexBuyer();
     address buyerAddress = seller[adresse][index].getCounterpartAddress(true);
-    storeEvents(adresse, buyerAddress, "validation", index, indexBuyer, false);
+    storeEvents(adresse, buyerAddress, "validation", index, indexBuyer, false);*/
+  }
+  function proxyValidation(address adresse, uint index, bool IsSeller){
+    validation(adresse, index, IsSeller);
   }
 
   function defaultPayment(address adresse, uint index, bool IsVerifed){
@@ -221,13 +220,12 @@ contract Central_Contract {
   }
 
   function approveMofification(address adresse, uint index, bool IsSeller){
-    bytes1 side;
+
     if(IsSeller){
-      side = "s";
       //Restaure the parameter
       seller[adresse][index].setInModification(false);
       //Validate the approval
-      Validation(adresse, index, side);
+      validation(adresse, index, IsSeller);
     }
     else{
       //Restaure the parameter
@@ -237,7 +235,7 @@ contract Central_Contract {
 
     //Delete the old invoice
     uint indexToRemove_Seller = seller[adresse][index].get_Tmp_indexSeller();
-    remove(adresse, indexToRemove_Seller, "");
+    remove(adresse, indexToRemove_Seller, 2);
 
     //Register event
     uint indexBuyer_ = seller[adresse][index].getIndexBuyer();
@@ -253,28 +251,28 @@ contract Central_Contract {
     //Get back the old invoice
     seller[adresse][index].restore(previous_amount, previous_dueAt);
     //Remove it from the awaiting invoices
-    remove(adresse, index_Await_Seller, "");
+    remove(adresse, index_Await_Seller, 2);
     //Register event
     uint indexBuyer = seller[adresse][index].getIndexBuyer();
     address buyerAddress = seller[adresse][index].getCounterpartAddress(true);
     storeEvents(adresse, buyerAddress, "modificationDesapproved.", index, indexBuyer, false);
   }
 
-  function remove(address adresse, uint indexToRemove, bytes1 side){
+  function remove(address adresse, uint indexToRemove, uint side){
     //Register event
     uint indexBuyer = seller[adresse][indexToRemove].getIndexBuyer();
     address buyerAddress = seller[adresse][indexToRemove].getCounterpartAddress(true);
     storeEvents(adresse, buyerAddress, "removed", indexToRemove, indexBuyer, false);
 
     uint i;
-    if(side == "s"){
+    if(side == 0){
       //Replace
       seller[adresse][indexToRemove] = seller[adresse][seller[adresse].length-1];
       //Erase the last
       delete seller[adresse][seller[adresse].length-1];
       seller[adresse].length--;
     }
-    else if (side == "b"){
+    else if (side == 1){
       //Replace
       buyer[adresse][indexToRemove] = buyer[adresse][buyer[adresse].length-1];
       //Erase the last
@@ -282,15 +280,12 @@ contract Central_Contract {
       buyer[adresse].length--;
     }
     else{
-      if (indexToRemove >=awaitingInvoice[adresse].length){}
-        else{
-          for (i = indexToRemove; i<awaitingInvoice[adresse].length-1; i++){
-              awaitingInvoice[adresse][i] = awaitingInvoice[adresse][i+1];
-          }
-          delete awaitingInvoice[adresse][awaitingInvoice[adresse].length-1];
-          awaitingInvoice[adresse].length--;
-        }
+      if (indexToRemove >= awaitingInvoice[adresse].length){}
+      else{
+        delete awaitingInvoice[adresse][indexToRemove];
+      }
     }
   }
 
 }
+

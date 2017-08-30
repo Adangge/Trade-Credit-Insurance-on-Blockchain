@@ -13,7 +13,7 @@
   ]);
 
   try{
-    $apikey = "xxxx";
+    $apikey = "xxxxxxxxxxxxxx";
 
     $response = $client->request('POST', $api_base_uri."/coverage", [
       'headers' => [ 'apikey' => $apikey ],
