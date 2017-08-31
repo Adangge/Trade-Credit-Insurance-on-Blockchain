@@ -50,3 +50,8 @@ The project was designed as follow:
 
 We tried to propose an eficient solution of the invoice management and model the Euler Hermes business process in order to see how would look like a real Trade Financing process.
 
+### More on Smart TCI 
+
+* **Article:** [https://www.ehda.co/insights/](https://www.ehda.co/insights/)
+
+* **Demo video:** [https://youtu.be/SMtTDci6Efk](https://youtu.be/SMtTDci6Efk)
