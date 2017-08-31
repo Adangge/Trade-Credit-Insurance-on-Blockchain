@@ -10,8 +10,6 @@ Before set up the project on your computer, you have to install those software:
 
 * **Geth**: [https://github.com/ethereum/go-ethereum](https://github.com/ethereum/go-ethereum)
 
-* **Metamask**: [https://metamask.io/](https://metamask.io/)
-
 * **Xampp**: [https://www.apachefriends.org/](https://www.apachefriends.org/fr/download.html)
 
 * **Truffle**: 
@@ -50,3 +48,13 @@ The project was designed as follow:
 
 We tried to propose an eficient solution of the invoice management and model the Euler Hermes business process in order to see how would look like a real Trade Financing process.
 
+### About Metamask
+
+This branch isn't using Metamask due to the several bugs that occured (pricing, pendding transactions...). Therefore we build a new system that allow us to send and receive rpc transactions and also manage the changinbg accounts.
+You will find it in the repertory named as **rpc_Tools**.
+
+### More on Smart TCI 
+
+* **Article:** [https://www.ehda.co/insights/](https://www.ehda.co/insights/)
+
+* **Demo video:** [https://youtu.be/SMtTDci6Efk](https://youtu.be/SMtTDci6Efk)
